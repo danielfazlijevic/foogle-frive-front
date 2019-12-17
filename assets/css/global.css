@@ -1,0 +1,9 @@
+.sweet-modal .sweet-box-actions .sweet-action-close{
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.transition{
+    transition: 0.5s;
+}
