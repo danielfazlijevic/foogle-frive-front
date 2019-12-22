@@ -15,20 +15,25 @@
     </div>
     <div class="w-full block flex-grow lg:flex lg:items-center lg:w-auto">
       <div class="text-sm lg:flex-grow">
-        <a
-          href="#responsive-header"
+        <nuxt-link
+          to="/"
           class="block mt-4 lg:inline-block lg:mt-0 text-blue-200 hover:text-white mr-4"
-        >My Files</a>
-        <a
-          href="#responsive-header"
+        >My Files</nuxt-link>
+        <nuxt-link
+          to="/shared"
           class="block mt-4 lg:inline-block lg:mt-0 text-blue-200 hover:text-white mr-4"
-        >Shared Folders</a>
+        >Shared Folders</nuxt-link>
       </div>
-      <div class="text-white">
+      <div v-if="user && user.username" class="text-white">
         {{ user.username }}
         <span
           class="bg-blue-200 font-semibold text-blue-900 rounded-lg py-1 tracking-wide uppercase px-2 text-sm"
         >{{ user.accountType }}</span>
+        <button class="px-4 py-2 bg-blue-200 rounded" @click="logOut">Log Out</button>
+      </div>
+      <div v-else>
+        <nuxt-link class="mx-2 bg-gray-300 px-2 py-1 rounded-lg uppercase tracking-wide font-semibold" to="login">Login</nuxt-link>
+        <nuxt-link class="mx-2 bg-gray-300 px-2 py-1 rounded-lg uppercase tracking-wide font-semibold" to="register">Register</nuxt-link>
       </div>
     </div>
   </nav>
@@ -48,10 +53,17 @@ export default {
       if (user) {
         this.$store.commit("user/SET_USER", { ...user });
         console.log("USER FOUND", user);
-        this.$router.push("/");
+        // this.$router.push("/");
       }
     } catch (err) {
       console.warn(err);
+    }
+  },
+  methods: {
+    logOut() {
+      localStorage.removeItem("frive-token");
+      this.$store.dispatch("user/setUser", {});
+      this.$router.push("/login");
     }
   }
 };

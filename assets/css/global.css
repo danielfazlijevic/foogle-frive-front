@@ -4,6 +4,11 @@
     align-items: center !important;
 }
 
+.sweet-modal.is-alert .sweet-content{
+    padding: 20px !important;
+    text-align: justify !important;
+}
+
 .transition{
     transition: 0.5s;
 }

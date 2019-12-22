@@ -4,7 +4,7 @@ export default {
    ** Headers of the page
    */
   head: {
-    title: process.env.npm_package_name || '',
+    title: "FGL FRIVE",
     meta: [{
         charset: 'utf-8'
       },
@@ -34,14 +34,18 @@ export default {
    ** Global CSS
    */
   css: [
-    '~/assets/css/global.css'],
+    '~/assets/css/global.css'
+  ],
   /*
    ** Plugins to load before mounting the App
    */
   plugins: [
     '~/plugins/icons',
     '~/plugins/axios',
-    { src: '~/plugins/modals', ssr: false }
+    {
+      src: '~/plugins/modals',
+      ssr: false
+    },
   ],
 
   /*

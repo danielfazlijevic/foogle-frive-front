@@ -4,7 +4,7 @@
       class="bg-white md:w-1/3 shadow-md rounded px-8 pt-6 pb-8 mb-4"
       @submit.prevent="handleForm"
     >
-      <h2 class="text-2xl font-bold tracking-widest mb-1">Login</h2>
+      <h2 class="text-2xl font-bold tracking-widest mb-1">Register</h2>
       <div class="mb-4">
         <label class="block text-gray-700 text-sm font-bold mb-2" for="username">Username</label>
         <input
@@ -29,13 +29,13 @@
         <button
           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           type="submit"
-        >Sign In</button>
-        <a
-          class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
-          href="#"
-        >Forgot Password?</a>
+        >Register</button>
       </div>
     </form>
+    <sweet-modal icon="error" ref="errorModal">
+      <p class="font-semibold">Error while creating user.</p>
+      <p>A user with a same username might already exist.</p>
+    </sweet-modal>
   </div>
 </template>
 
@@ -56,22 +56,22 @@ export default {
           password: this.password
         };
 
-        const response = await this.$axios.$post('/auth/login', data);
+        const response = await this.$axios.$post("/auth/signup", data);
 
-        console.log('response', response);
+        console.log("response", response);
 
-        const token = 'Bearer ' + response.token;
-        this.$axios.setHeader('Authorization', token);
+        const token = "Bearer " + response.token;
+        
+        this.$axios.setHeader("Authorization", token);
         localStorage.setItem("frive-token", token);
 
-        const user = await this.$axios.$get('/auth/current');
-        console.log('user', user);
-        
-        if(user){
-          this.$store.commit('user/SET_USER', { ...user, token });
-          this.$router.push('/');  
+        const user = await this.$axios.$get("/auth/current");
+        console.log("user", user);
+
+        if (user) {
+          this.$store.commit("user/SET_USER", { ...user, token });
+          this.$router.push("/");
         }
-        
 
         // console.log("response", response);
         // this.$axios.setHeader("Authorization", response.token);
@@ -80,7 +80,7 @@ export default {
 
         // console.log(user);
       } catch (e) {
-        alert("Wrong email or password!");
+        this.$refs.errorModal.open();
         console.log("error!", e);
       }
     }

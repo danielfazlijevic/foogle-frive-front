@@ -15,7 +15,8 @@ export const mutations = {
     state.currentFolder.files = files;
   },
   SET_FOLDER_PATH(state, folderPath) {
-    state.currentFolder.path = folderPath;
+    const newPath = folderPath.replace(/\/{2,}/g, "/");   
+    state.currentFolder.path = newPath;
   }
 };
 
@@ -24,21 +25,21 @@ export const actions = {
     commit,
     state
   }, {
-    fileName
+    fileName,
+    sharedLinkId
   }) {
     console.log('filename', fileName);
-    const {
-      files,
-      path
-    } = this.$axios.get("/files/list", {
+    console.log('sharedLinkId', sharedLinkId);
+    const API_URL = sharedLinkId ? `/shared/list/${sharedLinkId}` : `/files/list`;
+    const path = sharedLinkId ? "/" + fileName : state.currentFolder.path  + fileName;
+    this.$axios.get(API_URL, {
       params: {
-        path: state.currentFolder.path + "/" + fileName
+        path
       }
     }).then(response => {
       console.log('response', response);
       commit('SET_FILES', response.data.files);
       commit('SET_FOLDER_PATH', response.data.path);
-
     });
 
 

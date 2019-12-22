@@ -14,6 +14,9 @@
 
 <script>
 import File from "@/components/File.vue";
+
+import { isImage } from "@/utils/files";
+
 export default {
   components: {
     File
@@ -40,10 +43,13 @@ export default {
         };
 
         this.contentToShow = await this.$axios.$post("/files/get", data);
+        
         if (fileName.endsWith(".txt")) {
           this.fileType = "txt";
         }
-        if (fileName.endsWith(".jpg")) {
+        console.log('isImage', isImage(fileName));
+        if (isImage(fileName)) {
+          console.log('yes image');
           this.fileType = "img";
         }
 

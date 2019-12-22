@@ -1,110 +1,90 @@
 <template>
   <div class="container px-4">
     <h2 class="text-3xl font-semibold mb-2">Your Files</h2>
-    <div v-if="!loading">
-      <p>
-        Path:
-        <span class="tracking-wide">{{ currentFolderPath }}</span>
-        <button
-          :disabled="!currentFolderPath.includes('/')"
-          class="flex justify-center text-white p-2 mb-2 rounded"
-          :class="[!currentFolderPath.includes('/') ? 'bg-gray-600' : 'bg-blue-400']"
-          @click="goBack"
-        >
-          <v-icon class="h-6 w-6" name="arrow-left" />Back
-        </button>
-      </p>
-      <div class="file-grid">
-        <File v-for="file in files" :key="file" :file="file" @click.native="handleClick(file)" />
-      </div>
-
-      <FABButton />
-
-      <!-- {{ files }} -->
-      <sweet-modal ref="modal">
-        <sweet-modal-tab title="Preview" id="preview" v-html="getPreview(contentToShow)"></sweet-modal-tab>
-        <sweet-modal-tab
-          :disabled="fileType === 'txt'"
-          title="Base64"
-          id="base64"
-        >{{ contentToShow }}</sweet-modal-tab>
-      </sweet-modal>
-    </div>
+    <button
+      class="flex justify-between items-center bg-indigo-600 uppercase tracking-wide text-white px-2 py-2 rounded-lg"
+      @click="openSharePanel"
+    >
+      Share
+      <v-icon class="ml-2 h-5 w-5" name="share-2" />
+    </button>
+    <Files v-if="!loading" />
     <div v-else>Loading...</div>
+
+    <sweet-modal ref="share">
+      <sweet-modal-tab title="Share to user" id="user">
+        <p class="text-gray-600 mb-2">Type the username of member you want to share your drive with.</p>
+        <div class="flex justify-between items center">
+          <input
+            class="shadow appearance-none border rounded mr-3 w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            v-model="shareToUsername"
+            type="text"
+            placeholder="Username"
+          />
+          <button
+            class="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded"
+            :disabled="shareToUsername.length === 0"
+            v-on:click="shareDriveToUsername()"
+          >Share</button>
+        </div>
+      </sweet-modal-tab>
+      <sweet-modal-tab title="Get shareable link" id="link">
+        <div class="flex items-center justify-between">
+          <p class="text-gray-800">Get a shareable link so anyone can view your drive.</p>
+          <button
+            class="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded"
+            v-on:click="createShareLink"
+            :disabled="creatingLink"
+          >Create</button>
+        </div>
+        <p class="font-mono mt-2" v-if="link">
+          <input readonly type="text" class="w-full bg-gray-100 px-2 py-1" :value="link" />
+        </p>
+      </sweet-modal-tab>
+    </sweet-modal>
   </div>
 </template>
 
 <script>
-import File from "@/components/File.vue";
-import FABButton from "@/components/FABButton.vue";
-
-import { mapGetters, mapMutations } from "vuex";
+import Files from "@/components/Files.vue";
 
 export default {
   components: {
-    File,
-    FABButton
+    Files
   },
   data() {
     return {
       loading: true,
-      contentToShow: "",
-      fileType: ""
+      shareToUsername: "",
+      users: [],
+      creatingLink: false,
+      link: ""
     };
   },
-  computed: {
-    // currentFolderPath() {
-    //   // return this.$store.getters.folderData.getFolderPath;
-    //   return 'das'
-    // },
-    ...mapGetters({
-      currentFolderPath: "folderData/getFolderPath",
-      files: "folderData/getFiles"
-    })
-  },
   methods: {
-    async handleClick(fileName) {
-      console.log("filename", fileName);
+    async openSharePanel() {
+      this.users = await this.$axios.$get("/users");
+
+      // this.users = users.map(user => user.username);
+      // console.log(this.users, typeof this.users);
+      this.$refs.share.open();
+    },
+    async createShareLink() {
+      this.creatingLink = true;
+      const link = await this.$axios.$put("/shared/create");
+      if (link) this.link = window.location.host + "/shared/" + link.id;
+      this.creatingLink = false;
+    },
+    async shareDriveToUsername() {
       try {
-        if (!fileName.includes(".")) {
-          await this.$store.dispatch("folderData/setFolderData", { fileName });
-          console.log(this.files);
-          return;
-        }
-
-        const data = {
-          requestedFilePath: this.currentFolderPath + "/" + fileName
-        };
-
-        this.contentToShow = await this.$axios.$post("/files/get", data);
-        if (fileName.endsWith(".txt")) {
-          this.fileType = "txt";
-        }
-        if (fileName.endsWith(".jpg")) {
-          this.fileType = "img";
-        }
-
-        this.$refs.modal.open("preview");
+        const shared = await this.$axios.$put(
+          `/shared/create/${this.shareToUsername}`
+        );
+        alert("Drive shared to user " + this.shareToUsername);
+        this.shareToUsername = "";
       } catch (err) {
-        console.error(err);
+        alert("Error while trying to share your drive. Check the username.");
       }
-    },
-    getPreview(content) {
-      if (this.fileType === "txt") return content;
-      if (this.fileType === "img")
-        return `<img src="data:image/png;base64,${content}"/>`;
-    },
-    async goBack() {
-      const currentFolderPath = this.currentFolderPath.substr(
-        0,
-        this.currentFolderPath.lastIndexOf("/")
-      );
-      console.log("parent", currentFolderPath);
-      const { files, path } = await this.$axios.$get("/files/list", {
-        params: { path: currentFolderPath }
-      });
-      this.$store.commit('folderData/SET_FILES', files);
-      this.$store.commit("folderData/SET_FOLDER_PATH", path);
     }
   },
   async mounted() {
