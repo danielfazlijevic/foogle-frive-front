@@ -1,6 +1,6 @@
 # Google Drive-like web app
 
- [Click here for the back-end code (NodeJS+Express+JWT+Sequelize+PostreSQL)](https://github.com/danielfazlijevic/foogle-frive-back)
+ [Click here for the back-end code (NodeJS+Express+JWT+Sequelize+PostreSQL)](https://github.com/danielfazlijevic/foogle-frive-server)
 
 A web application built with Vue, Nuxt & Tailwind which has some features like Google Drive: 
  
