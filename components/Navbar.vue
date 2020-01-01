@@ -29,7 +29,7 @@
         <span
           class="bg-blue-200 font-semibold text-blue-900 rounded-lg py-1 tracking-wide uppercase px-2 text-sm"
         >{{ user.accountType }}</span>
-        <button class="px-4 py-2 bg-blue-200 rounded" @click="logOut">Log Out</button>
+        <button class="px-4 py-2 bg-red-600 rounded" @click="logOut">Log Out</button>
       </div>
       <div v-else>
         <nuxt-link class="mx-2 bg-gray-300 px-2 py-1 rounded-lg uppercase tracking-wide font-semibold" to="login">Login</nuxt-link>

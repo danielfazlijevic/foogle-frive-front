@@ -1,5 +1,5 @@
 export default {
-  mode: 'universal',
+  mode: 'spa',
   /*
    ** Headers of the page
    */
@@ -24,6 +24,9 @@ export default {
       href: '/favicon.ico'
     }]
   },
+  server: {
+    host: '0.0.0.0'
+  },
   /*
    ** Customize the progress-bar color
    */
@@ -45,7 +48,7 @@ export default {
     {
       src: '~/plugins/modals',
       ssr: false
-    },
+    }
   ],
 
   /*
@@ -70,6 +73,7 @@ export default {
    */
   axios: {
     baseURL: 'http://localhost:8000',
+    // baseURL: 'http://192.168.1.5:8000'
   },
   /*
    ** Build configuration
@@ -78,7 +82,7 @@ export default {
     /*
      ** You can extend webpack config here
      */
-    transpile: ['vue-icon'],
+    transpile: ['vue-icon', 'vue-context'],
 
     extend(config, ctx) {
       if (ctx.isDev) {

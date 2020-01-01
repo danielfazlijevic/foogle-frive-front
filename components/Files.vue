@@ -15,24 +15,45 @@
       </button>
     </div>
     <div class="file-grid">
-      <File v-for="file in files" :key="file" :file="file" @click.native="handleClick(file)" />
+      <File
+        v-for="file in files"
+        :key="file"
+        :file="file"
+        @click.right.native.prevent="$refs.menu.open($event, { file: file })"
+        @click.native="handleClick(file)"
+      />
     </div>
 
-    <FABButton v-if="!isShared" />
+    <FABButton v-if="!isShared && (user.accountType === 'premium' || files.length < 5)" />
 
     <!-- {{ files }} -->
     <sweet-modal ref="modal">
       <sweet-modal-tab title="Preview" id="preview" v-html="getPreview(contentToShow)"></sweet-modal-tab>
       <sweet-modal-tab :disabled="fileType === 'txt'" title="Base64" id="base64">{{ contentToShow }}</sweet-modal-tab>
-
-      <button slot="button">
-        <a href>Download</a>
-      </button>
     </sweet-modal>
+    <client-only>
+      <vue-context ref="menu">
+        <template slot-scope="child">
+          <li>
+            <a href="#" @click.prevent="handleClick(child.data.file)">Open</a>
+          </li>
+          <li v-if="user.accountType === 'premium'">
+            <a href="#" @click.prevent="rename(child.data.file)">Rename</a>
+          </li>
+          <li v-if="user.accountType === 'premium'">
+            <a href="#" @click.prevent="move(child.data.file)">Move</a>
+          </li>
+          <li v-if="user.accountType === 'premium'">
+            <a href="#" @click.prevent="deleteFolder(child.data.file)">Delete</a>
+          </li>
+        </template>
+      </vue-context>
+    </client-only>
   </div>
 </template>
 
 <script>
+import { VueContext } from "vue-context";
 import { mapGetters, mapMutations } from "vuex";
 
 import { isImage } from "@/utils/files";
@@ -49,7 +70,8 @@ export default {
   },
   components: {
     File,
-    FABButton
+    FABButton,
+    VueContext
   },
   data() {
     return {
@@ -60,13 +82,17 @@ export default {
   computed: {
     ...mapGetters({
       currentFolderPath: "folderData/getFolderPath",
-      files: "folderData/getFiles"
+      files: "folderData/getFiles",
+      user: "user/getUser"
     }),
     prefix() {
       return this.isShared ? "/shared" : "";
     },
-    canGoBack(){
-      return this.currentFolderPath.includes('/') && this.currentFolderPath.lastIndexOf('/') !== 0
+    canGoBack() {
+      return (
+        this.currentFolderPath.includes("/") &&
+        this.currentFolderPath.lastIndexOf("/") !== 0
+      );
     }
   },
 
@@ -75,10 +101,15 @@ export default {
       console.log("filename", fileName);
       try {
         if (!fileName.includes(".")) {
-        const sharedLinkId = this.$route.params.id;
-        const path = sharedLinkId ? this.currentFolderPath  + '/' + fileName : '/' + fileName; 
-        console.log('requesting path:', path);
-        await this.$store.dispatch("folderData/setFolderData", { fileName: path , sharedLinkId });
+          const sharedLinkId = this.$route.params.id;
+          const path = sharedLinkId
+            ? this.currentFolderPath + "/" + fileName
+            : "/" + fileName;
+          console.log("requesting path:", path);
+          await this.$store.dispatch("folderData/setFolderData", {
+            fileName: path,
+            sharedLinkId
+          });
           // console.log(this.files);
           return;
         }
@@ -108,16 +139,64 @@ export default {
       if (this.fileType === "img")
         return `<img src="data:image/png;base64,${content}"/>`;
     },
+    async rename(fileName) {
+      try {
+        const filePath = this.currentFolderPath + "/" + fileName;
+        const newName = window.prompt("Rename file to:");
+        console.log("renaming", filePath, "to new name", newName);
+        await this.$axios.$patch("files/rename", {
+          currentPath: filePath,
+          wantedName: newName
+        });
+        await this.$store.dispatch("folderData/refreshFolderData");
+      } catch (err) {
+        alert("Error while trying to rename the file.");
+      }
+    },
+    async deleteFolder(folderName) {
+      try {
+        if (folderName.includes("."))
+          return alert("You can only delete empty folders!");
+
+        await this.$axios.$delete("/files/folder", {
+          data: {
+            folderPath: this.currentFolderPath + "/" + folderName
+          }
+        });
+        await this.$store.dispatch("folderData/refreshFolderData");
+      } catch (err) {
+        alert("Error while trying to delete the folder.");
+      }
+    },
+    async move(fileName) {
+      try {
+        const filePath = this.currentFolderPath + "/" + fileName;
+        const desiredPath = prompt("Enter the desired path", filePath);
+        await this.$axios.$patch("files/move", {
+          currentPath: filePath,
+          desiredPath
+        });
+        if (filePath !== desiredPath)
+          await this.$store.dispatch("folderData/refreshFolderData");
+      } catch (err) {
+        console.log(err);
+        alert("We encountered an error while moving.");
+      }
+    },
     async goBack() {
-      console.log('currentFolderPath', this.currentFolderPath)
-      const substrIndexFirst = this.isShared ? this.currentFolderPath.indexOf('/') + 1 : 0; 
+      console.log("currentFolderPath", this.currentFolderPath);
+      const substrIndexFirst = this.isShared
+        ? this.currentFolderPath.indexOf("/") + 1
+        : 0;
       const currentFolderPath = this.currentFolderPath.substr(
         0,
         this.currentFolderPath.lastIndexOf("/")
       );
-      console.log('folder path: ', currentFolderPath)
+      console.log("folder path: ", currentFolderPath);
       console.log("parent", currentFolderPath);
-      const API_URL = this.isShared ? `/shared/list/${this.$route.params.id}` : "files/list";
+      const API_URL = this.isShared
+        ? `/shared/list/${this.$route.params.id}`
+        : "files/list";
       const { files, path } = await this.$axios.$get(API_URL, {
         params: { path: currentFolderPath }
       });
@@ -128,5 +207,6 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
+@import "../node_modules/vue-context/dist/css/vue-context.css";
 </style>

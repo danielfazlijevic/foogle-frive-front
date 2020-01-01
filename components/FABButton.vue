@@ -16,6 +16,7 @@
           <v-icon class="ml-2 h-4 w-4" name="upload" />
         </button>
         <button
+          v-if="user.accountType === 'premium'"
           @click="showCreateFolderPanel"
           class="bg-blue-600 mr-2 font-semibold text-white px-3 py-2 rounded-lg uppercase tracking-wide shadow-lg flex justify-between items-center hover:bg-blue-700 transition"
         >
@@ -67,6 +68,7 @@ export default {
   },
   computed: {
     ...mapGetters({
+      user: "user/getUser",
       currentFolderPath: "folderData/getFolderPath",
       files: "folderData/getFiles"
     })
